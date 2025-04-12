@@ -160,11 +160,12 @@ const config = {
     "db"
   ],
   "activeProvider": "postgresql",
+  "postinstall": false,
   "inlineDatasources": {
     "db": {
       "url": {
         "fromEnvVar": "DATABASE_URL",
-        "value": "postgresql://postgres:@localhost:5431/clash_yt?schema=public"
+        "value": null
       }
     }
   },

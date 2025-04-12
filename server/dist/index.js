@@ -3,19 +3,23 @@ import "dotenv/config";
 import ejs from "ejs";
 import path from "path";
 import { fileURLToPath } from "url";
+import Routes from "./routes/index.js";
+import { emailQueue, emailQueueName } from "./jobs/Emailjob.js";
 const app = express();
 const PORT = process.env.PORT || 7000;
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+// * Set View Engine
 app.set("view engine", "ejs");
 app.set("views", path.resolve(__dirname, "./views"));
+// * Routes
+app.use(Routes);
 app.get("/", async (_req, res) => {
     try {
         const html = await ejs.renderFile(path.join(__dirname, "./views/emails/welcome.ejs"), { name: "Amrendra Singh" });
-        // await sendEmail("leostereo1108@gmail.com", "Testing SMTP", html);
         await emailQueue.add(emailQueueName, {
-            to: "leostereo1108@gmail.com",
+            to: "rohanamansharma@gmail.com",
             subject: "Testing Queue Email",
             body: html,
         });
@@ -30,5 +34,4 @@ app.get("/", async (_req, res) => {
 });
 // * Queues
 import "./jobs/index.js";
-import { emailQueue, emailQueueName } from "./jobs/Emailjob.js";
 app.listen(PORT, () => console.log(`Server is running on PORT ${PORT}`));

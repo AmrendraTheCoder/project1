@@ -14,3 +14,10 @@ export const queueWorker = new Worker(emailQueueName, async (job) => {
 }, {
     connection: redisConnection,
 });
+// Add event handlers for better debugging
+queueWorker.on("completed", (job) => {
+    console.log(`Job ${job.id} has completed successfully`);
+});
+queueWorker.on("failed", (job, error) => {
+    console.error(`Job ${job?.id} has failed with error:`, error);
+});
