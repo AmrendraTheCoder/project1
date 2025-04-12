@@ -1,4 +1,5 @@
-import { Router, Request, Response } from "express";
+import { Router } from "express";
+import { Request, Response, NextFunction } from "express";
 import { registerSchema } from "../validation/authValidations.js";
 import { formatError } from "../helper.js";
 import { ZodError } from "zod";
@@ -7,52 +8,47 @@ import bcrypt from "bcrypt";
 
 const router = Router();
 
-// * Register route
-router.post("/register", async (req: Request, res: Response) => {
-  try {
-    const body = req.body;
-    const payload = registerSchema.parse(body);
-    
-    // Check if user already exists
-    let user = await prisma.user.findUnique({
-      where: { email: payload.email },
-    });
+// Updated handler using RequestHandler type implicitly
+router.post(
+  "/register",
+  function (req: Request, res: Response, next: NextFunction) {
+    const processRegistration = async () => {
+      try {
+        const body = req.body;
+        const payload = registerSchema.parse(body);
+        let user = await prisma.user.findUnique({
+          where: { email: payload.email },
+        });
 
-    if (user) {
-      return res.status(422).json({
-        errors: {
-          email: "Email already exists. Please use another one.",
-        },
-      });
-    }
+        if (user) {
+          return res.status(422).json({
+            errors: {
+              email: "Email already exists. Please use another one.",
+            },
+          });
+        }
 
-    // * Encrypt the password - fixed version
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(payload.password, salt);
+        // Encrypt the password
+        const salt = await bcrypt.genSalt(10);
+        payload.password = await bcrypt.hash(payload.password, salt);
 
-    // Create user with properly formatted data matching your schema
-    await prisma.user.create({
-      data: {
-        name: payload.name,
-        email: payload.email,
-        password: hashedPassword,
-        // Omitting properties that should have defaults or be null
-      },
-    });
-    
-    return res.json({ message: "Account created Successfully!" });
-  } catch (error) {
-    console.error("Registration error:", error);
-    
-    if (error instanceof ZodError) {
-      const errors = formatError(error);
-      return res.status(422).json({ message: "Invalid data", errors });
-    }
-    
-    return res
-      .status(500)
-      .json({ message: "Something went wrong. Please try again!" });
+        await prisma.user.create({
+          data: payload,
+        });
+        return res.json({ message: "Account created Successfully!" });
+      } catch (error) {
+        if (error instanceof ZodError) {
+          const errors = formatError(error);
+          return res.status(422).json({ message: "invalid data", errors });
+        }
+        return res
+          .status(500)
+          .json({ message: "something went wrong. Please try again!" });
+      }
+    };
+
+    processRegistration().catch(next);
   }
-});
+);
 
 export default router;

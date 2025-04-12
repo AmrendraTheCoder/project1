@@ -4,7 +4,9 @@ import ejs from "ejs";
 import path from "path";
 import { fileURLToPath } from "url";
 import Routes from "./routes/index.js";
-import { emailQueue, emailQueueName } from "./jobs/Emailjob.js";
+// Import email queue
+import "./jobs/index.js";
+import { emailQueue } from "./jobs/Emailjob.js";
 const app = express();
 const PORT = process.env.PORT || 7000;
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -15,23 +17,37 @@ app.set("view engine", "ejs");
 app.set("views", path.resolve(__dirname, "./views"));
 // * Routes
 app.use(Routes);
-app.get("/", async (_req, res) => {
+// Root route handler - using correct handler syntax
+app.get("/", (req, res) => {
+    // Remove async if not needed or handle properly if it is
     try {
-        const html = await ejs.renderFile(path.join(__dirname, "./views/emails/welcome.ejs"), { name: "Amrendra Singh" });
-        await emailQueue.add(emailQueueName, {
-            to: "rohanamansharma@gmail.com",
-            subject: "Testing Queue Email",
-            body: html,
+        const html = ejs
+            .renderFile(path.join(__dirname, "./views/emails/welcome.ejs"), {
+            name: "Amrendra Singh",
+        })
+            .then((renderedHtml) => {
+            emailQueue
+                .add("email-job", {
+                to: "rohanamansharma@gmail.com",
+                subject: "Testing Queue Email",
+                body: renderedHtml,
+            })
+                .then(() => {
+                res.json({ msg: "Email sent successfully" });
+            })
+                .catch((error) => {
+                console.error("Error sending email:", error);
+                res
+                    .status(500)
+                    .json({ msg: "Failed to send email", error: String(error) });
+            });
         });
-        return res.json({ msg: "Email sent successfully" });
     }
     catch (error) {
-        console.error("Error sending email:", error);
-        return res
+        console.error("Error rendering template:", error);
+        res
             .status(500)
-            .json({ msg: "Failed to send email", error: String(error) });
+            .json({ msg: "Failed to render template", error: String(error) });
     }
 });
-// * Queues
-import "./jobs/index.js";
 app.listen(PORT, () => console.log(`Server is running on PORT ${PORT}`));
