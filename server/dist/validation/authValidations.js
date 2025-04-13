@@ -12,7 +12,7 @@ export const registerSchema = z
         .string({ message: "Password is required" })
         .min(6, { message: "Password must be at least 6 characters long" }),
     confirm_password: z
-        .string({ message: "Confirm Password is required" })
+        .string({ message: "Confirm Password is required...." })
         .min(6, {
         message: "Confirm Password must be at least 6 characters long",
     }),

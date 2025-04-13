@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { Toaster } from "sonner";
 
 import { Inter as FontSans } from "next/font/google"
 
@@ -36,6 +37,7 @@ export default function RootLayout({
       <body
         className={`${fontSans.variable} min-h-screen bg-slate-50 font-sans antialiased`}
       >
+        <Toaster richColors position="top-right"/>
         {children}
       </body>
     </html>
