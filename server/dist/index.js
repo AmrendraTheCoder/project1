@@ -28,7 +28,7 @@ app.get("/", (req, res) => {
             .then((renderedHtml) => {
             emailQueue
                 .add("email-job", {
-                to: "rohanamansharma@gmail.com",
+                to: "leostereo1108@gmail.com",
                 subject: "Testing Queue Email",
                 body: renderedHtml,
             })
