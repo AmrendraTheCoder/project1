@@ -1,28 +1,41 @@
 "use client";
-
-import React, { useEffect, useCallback } from "react";
+import React, {
+  useActionState,
+  useEffect,
+  useCallback,
+  useTransition,
+} from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { useActionState } from "react";
-import { registerAction } from "@/actions/authActions";
-import { SubmitButton } from "@/components/common/SubmitBtn";
+import Link from "next/link";
+import { loginAction } from "@/actions/authActions";
 import { toast, Toaster } from "sonner";
+import { signIn } from "next-auth/react";
+import { LoginButton } from "../common/LoginButton";
 
-interface RegisterState {
+interface LoginState {
   status: number;
   message: string;
   errors: Record<string, string | undefined>;
+  data: {
+    email?: string;
+    password?: string;
+  };
 }
 
-function RegisterForm(): React.ReactElement {
-  const initState: RegisterState = {
+function Login() {
+  const initState: LoginState = {
     status: 0,
     message: "",
     errors: {},
+    data: {},
   };
 
-  const [state, formAction] = useActionState<RegisterState, FormData>(
-    registerAction,
+  // Add useTransition hook
+  const [isPending, startTransition] = useTransition();
+
+  const [state, formAction] = useActionState<LoginState, FormData>(
+    loginAction,
     initState
   );
 
@@ -32,6 +45,15 @@ function RegisterForm(): React.ReactElement {
       toast.error(state.message);
     } else if (state.status === 200) {
       toast.success(state.message);
+      // Use the data from state to sign in
+      if (state.data.email && state.data.password) {
+        signIn("credentials", {
+          email: state.data.email,
+          password: state.data.password,
+          redirect: true,
+          callbackUrl: "/", // Redirect after successful login
+        });
+      }
     } else if (state.status === 422) {
       toast.error("Please fix validation errors");
     }
@@ -45,85 +67,50 @@ function RegisterForm(): React.ReactElement {
   const handleSubmit = useCallback(
     async (formData: FormData) => {
       // Basic validation
-      const name = formData.get("name") as string;
       const email = formData.get("email") as string;
       const password = formData.get("password") as string;
-      const confirm_password = formData.get("confirm_password") as string;
-
       const errors: Record<string, string> = {};
-
-      if (!name?.trim()) {
-        errors.name = "Name is required";
-      }
 
       if (!email?.trim()) {
         errors.email = "Email is required";
       }
-
       if (!password) {
         errors.password = "Password is required";
       }
 
-      if (!confirm_password) {
-        errors.confirm_password = "Confirm password is required";
-      } else if (password !== confirm_password) {
-        errors.confirm_password = "Passwords don't match";
-      }
-
       // If there are validation errors, update state locally
       if (Object.keys(errors).length > 0) {
-        // Show error toast instead of returning state
         toast.error("Please fix validation errors");
         return;
       }
 
-      // If validation passes, call the form action
-      formAction(formData);
+      // If validation passes, call the form action within startTransition
+      startTransition(() => {
+        formAction(formData);
+      });
     },
-    [formAction]
+    [formAction, startTransition]
   );
 
   return (
     <>
       <Toaster position="top-center" />
-
       {state.status === 200 && (
         <div className="p-4 mb-4 bg-green-500 bg-opacity-20 border border-green-500 rounded-md text-green-100">
           {state.message}
         </div>
       )}
-
       {(state.status === 422 || state.status === 500) && state.message && (
         <div className="p-4 mb-4 bg-red-500 bg-opacity-20 border border-red-500 rounded-md text-red-100">
           {state.message}
         </div>
       )}
-
       <form
         onSubmit={(e) => {
           e.preventDefault();
           handleSubmit(new FormData(e.currentTarget));
         }}
       >
-        <div className="space-y-2">
-          <Label htmlFor="name" className="text-sm font-medium text-gray-100">
-            Full Name
-          </Label>
-          <Input
-            id="name"
-            name="name"
-            type="text"
-            placeholder="John Doe"
-            className="w-full p-2 bg-slate-800 border border-slate-600 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-pink-400 focus:border-transparent"
-            required
-          />
-          {state.errors?.name && (
-            <span className="text-sm text-red-300 font-medium">
-              {state.errors.name}
-            </span>
-          )}
-        </div>
-
         <div className="space-y-2 mt-4">
           <Label htmlFor="email" className="text-sm font-medium text-gray-100">
             Email Address
@@ -142,7 +129,6 @@ function RegisterForm(): React.ReactElement {
             </span>
           )}
         </div>
-
         <div className="space-y-2 mt-4">
           <Label
             htmlFor="password"
@@ -164,35 +150,20 @@ function RegisterForm(): React.ReactElement {
             </span>
           )}
         </div>
-
-        <div className="space-y-2 mt-4">
-          <Label
-            htmlFor="confirm_password"
-            className="text-sm font-medium text-gray-100"
+        <div className="text-right font-medium mt-2">
+          <Link
+            href="/forget-password"
+            className="text-pink-400 hover:text-pink-300 transition-colors"
           >
-            Confirm Password
-          </Label>
-          <Input
-            id="confirm_password"
-            name="confirm_password"
-            type="password"
-            placeholder="••••••••"
-            className="w-full p-2 bg-slate-800 border border-slate-600 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-pink-400 focus:border-transparent"
-            required
-          />
-          {state.errors?.confirm_password && (
-            <span className="text-sm text-red-300 font-medium">
-              {state.errors.confirm_password}
-            </span>
-          )}
+            Forgot Password?
+          </Link>
         </div>
-
         <div className="pt-4 mt-4">
-          <SubmitButton />
+          <LoginButton isPending={isPending} />
         </div>
       </form>
     </>
   );
 }
 
-export default RegisterForm;
+export default Login;

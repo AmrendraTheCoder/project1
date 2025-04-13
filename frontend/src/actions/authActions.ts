@@ -1,12 +1,26 @@
 "use server";
 
-import { REGISTER_URL } from "@/lib/apiEndPoints";
+import {
+  CHECK_CREDENTIALS_URL,
+  LOGIN_URL,
+  REGISTER_URL,
+} from "@/lib/apiEndPoints";
 import axios, { AxiosError } from "axios";
 
 interface RegisterState {
   status: number;
   message: string;
   errors: Record<string, string | undefined>;
+}
+
+interface LoginState {
+  status: number;
+  message: string;
+  errors: Record<string, string | undefined>;
+  data: {
+    email?: string;
+    password?: string;
+  };
 }
 
 export async function registerAction(
@@ -142,6 +156,111 @@ export async function registerAction(
       message:
         "Something went wrong with the registration. Please try again later.",
       errors: {},
+    };
+  }
+}
+
+export async function loginAction(
+  prevState: LoginState,
+  formData: FormData
+): Promise<LoginState> {
+  console.log("🚀 Login server action triggered");
+
+  try {
+    const email = formData.get("email") as string;
+    const password = formData.get("password") as string;
+
+    console.log("📝 Form data received:", { email });
+
+    // Validate input data
+    if (!email || !password) {
+      console.log("❌ Validation failed: Missing email or password");
+      return {
+        status: 422,
+        message: "Email and password are required",
+        errors: {
+          email: !email ? "Email is required" : undefined,
+          password: !password ? "Password is required" : undefined,
+        },
+        data: {},
+      };
+    }
+
+    // Prepare the data for API request
+    const data = {
+      email,
+      password,
+    };
+
+    console.log("📡 Using login endpoint:", CHECK_CREDENTIALS_URL);
+    console.log(
+      "✅ Validation passed, sending data to:",
+      CHECK_CREDENTIALS_URL
+    );
+
+    // Make the API request
+    const response = await axios({
+      method: "post",
+      url: CHECK_CREDENTIALS_URL,
+      data: data,
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    console.log("🎉 Login successful:", response.data);
+
+    // Return success state with user credentials for signIn
+    return {
+      status: 200,
+      message: response.data?.message || "Login successful!",
+      errors: {},
+      data: {
+        email: email,
+        password: password,
+      },
+    };
+  } catch (error) {
+    console.log("❌ Login error:", error);
+
+    // Handle specific error responses from the API
+    if (axios.isAxiosError(error) && error.response) {
+      console.log("🔍 Axios error details:", {
+        status: error.response.status,
+        statusText: error.response.statusText,
+        data: error.response.data,
+        url: error.config?.url,
+        method: error.config?.method,
+        code: error.code,
+      });
+
+      // Return validation errors from the API
+      if (error.response.status === 422) {
+        return {
+          status: 422,
+          message: error.response.data?.message || "Invalid credentials",
+          errors: error.response.data?.errors || {},
+          data: {},
+        };
+      }
+
+      // Return auth failure
+      if (error.response.status === 401) {
+        return {
+          status: 401,
+          message: error.response.data?.message || "Authentication failed",
+          errors: {},
+          data: {},
+        };
+      }
+    }
+
+    // Generic error return
+    return {
+      status: 500,
+      message: "Something went wrong. Please try again later.",
+      errors: {},
+      data: {},
     };
   }
 }

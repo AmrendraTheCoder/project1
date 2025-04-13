@@ -20,8 +20,10 @@ export const registerSchema = z
     .refine((data) => data.password === data.confirm_password, {
     message: "Passwords don't match",
     path: ["confirm_password"],
-})
-    .transform(({ confirm_password, ...rest }) => {
-    // Remove confirm_password from the data that will be stored
-    return rest;
+});
+export const loginSchema = z.object({
+    email: z
+        .string({ message: "Email is required" })
+        .email({ message: "Email must be a correct email." }),
+    password: z.string({ message: "Password is required" }),
 });

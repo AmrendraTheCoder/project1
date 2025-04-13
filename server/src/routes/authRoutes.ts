@@ -1,16 +1,172 @@
 import { Router } from "express";
 import { Request, Response, NextFunction } from "express";
-import { registerSchema } from "../validation/authValidations.js";
+import { loginSchema, registerSchema } from "../validation/authValidations.js";
 import { formatError, renderEmailEjs } from "../helper.js";
 import { ZodError } from "zod";
 import prisma from "../config/database.js";
 import bcrypt from "bcrypt";
 import { v4 as uuid4 } from "uuid";
+import jwt from "jsonwebtoken";
 import { emailQueue, emailQueueName } from "../jobs/Emailjob.js";
+import authMiddleware from "../middleware/AuthMiddleware.js";
 
 const router = Router();
 
-// Updated handler using RequestHandler type implicitly
+// * Login Routes
+router.post(
+  "/login",
+  function (req: Request, res: Response, next: NextFunction) {
+    const processLogin = async () => {
+      try {
+        const body = req.body;
+        const payload = loginSchema.parse(body);
+
+        // * Check email
+        let user = await prisma.user.findUnique({
+          where: { email: payload.email },
+        });
+        if (!user || user === null) {
+          return res.status(422).json({
+            message: "Authentication failed",
+            errors: { email: "No user found with this email." },
+          });
+        }
+
+        // * Check password
+        const compare = await bcrypt.compare(payload.password, user.password);
+        if (!compare) {
+          return res.status(422).json({
+            message: "Authentication failed",
+            errors: {
+              password: "Invalid password.",
+            },
+          });
+        }
+
+        // * JWT Payload
+        let JWTPayload = {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+        };
+
+        // Make sure SECRET_KEY is set
+        if (!process.env.SECRET_KEY) {
+          throw new Error("SECRET_KEY is not defined in environment variables");
+        }
+
+        const token = jwt.sign(JWTPayload, process.env.SECRET_KEY, {
+          expiresIn: "365d",
+        });
+
+        return res.status(200).json({
+          message: "Logged in successfully!",
+          data: {
+            ...JWTPayload,
+            token: `Bearer ${token}`,
+          },
+        });
+      } catch (error) {
+        console.error("Login error:", error);
+        if (error instanceof ZodError) {
+          const errors = formatError(error);
+          return res.status(422).json({
+            message: "Invalid login data",
+            errors,
+          });
+        }
+        return res.status(500).json({
+          message: "Something went wrong. Please try again later.",
+          errors: { general: "Server error during login" },
+        });
+      }
+    };
+
+    processLogin().catch((error) => {
+      console.error("Unhandled login error:", error);
+      next(error);
+    });
+  }
+);
+
+// * Login Check routes
+router.post(
+  "/check/credentials",
+  function (req: Request, res: Response, next: NextFunction) {
+    const processLogin = async () => {
+      try {
+        const body = req.body;
+        const payload = loginSchema.parse(body);
+
+        // * Check email
+        let user = await prisma.user.findUnique({
+          where: { email: payload.email },
+        });
+        if (!user || user === null) {
+          return res.status(422).json({
+            message: "Authentication failed",
+            errors: { email: "No user found with this email." },
+          });
+        }
+
+        // * Check password
+        const compare = await bcrypt.compare(payload.password, user.password);
+        if (!compare) {
+          return res.status(422).json({
+            message: "Authentication failed",
+            errors: {
+              password: "Invalid password.",
+            },
+          });
+        }
+
+        // * JWT Payload - Define it here before using
+        let JWTPayload = {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+        };
+
+        // Make sure SECRET_KEY is set
+        if (!process.env.SECRET_KEY) {
+          throw new Error("SECRET_KEY is not defined in environment variables");
+        }
+
+        const token = jwt.sign(JWTPayload, process.env.SECRET_KEY, {
+          expiresIn: "365d",
+        });
+
+        return res.status(200).json({
+          message: "Logged in successfully!",
+          data: {
+            ...JWTPayload,
+            token: `Bearer ${token}`,
+          },
+        });
+      } catch (error) {
+        console.error("Login error:", error);
+        if (error instanceof ZodError) {
+          const errors = formatError(error);
+          return res.status(422).json({
+            message: "Invalid login data",
+            errors,
+          });
+        }
+        return res.status(500).json({
+          message: "Something went wrong. Please try again later.",
+          errors: { general: "Server error during login" },
+        });
+      }
+    };
+
+    processLogin().catch((error) => {
+      console.error("Unhandled login error:", error);
+      next(error);
+    });
+  }
+);
+
+// * Register Routes
 router.post(
   "/register",
   function (req: Request, res: Response, next: NextFunction) {
@@ -78,5 +234,12 @@ router.post(
     processRegistration().catch(next);
   }
 );
+
+// * Get User
+router.get("/user", authMiddleware, async (req: Request, res: Response) => {
+  const user = req.user;
+  // await testQueue.add(testQueueName, user);
+  return res.json({ message: "Fetched", user });
+});
 
 export default router;
