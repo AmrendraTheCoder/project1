@@ -51,7 +51,7 @@ function Login() {
           email: state.data.email,
           password: state.data.password,
           redirect: true,
-          callbackUrl: "/", // Redirect after successful login
+          callbackUrl: "/dashboard", // Redirect after successful login
         });
       }
     } else if (state.status === 422) {
