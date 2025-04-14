@@ -1,14 +1,44 @@
 <!DOCTYPE html>
 <html lang="en">
 
-<%- include("../partials/head")  %>
+<%- include("../partials/head") %>
 
-  <body>
-    <div class="container">
-      Hello <strong> <%= name %> </strong>
-      <p>We are happy to on board you. We can't wait to see your choices.</p>
-      <p>If you have any query then let us know. We are happy to help.</p>
-      <%- include("../partials/footer")  %>
+<body>
+  <div class="email-container">
+    <div class="header">
+      <div class="logo">Rumor</div>
     </div>
-  </body>
+    
+    <div class="content">
+      <h1 class="greeting">Welcome to Rumor, <span class="highlight"><%= name %></span>!</h1>
+      
+      <div class="welcome-message">
+        <p>We're thrilled to have you on board! Your journey with us has just begun, and we're excited to see what you'll discover.</p>
+        
+        <div class="feature-section">
+          <div class="feature">
+            <div class="feature-icon">🔍</div>
+            <div class="feature-text">Explore trending content</div>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">💬</div>
+            <div class="feature-text">Connect with others</div>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">🌟</div>
+            <div class="feature-text">Share your favorites</div>
+          </div>
+        </div>
+        
+        <p>If you have any questions or need assistance, our support team is always ready to help you.</p>
+        
+        <div class="cta-container">
+          <a href="#" class="cta-button">Start Exploring</a>
+        </div>
+      </div>
+    </div>
+    
+    <%- include("../partials/footer") %>
+  </div>
+</body>
 </html>

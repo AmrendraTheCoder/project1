@@ -1,6 +1,7 @@
 import ejs from "ejs";
 import path from "path";
 import { fileURLToPath } from "url";
+import moment from "moment";
 export const formatError = (error) => {
     let errors = {};
     error.errors?.map((issue) => {
@@ -13,4 +14,10 @@ export const renderEmailEjs = async (fileName, payload) => {
     const html = await ejs
         .renderFile(path.join(__dirname, `./views/emails/${fileName}.ejs`), payload);
     return html;
+};
+export const checkDateHourDiff = (date) => {
+    const now = moment();
+    const tokenSendAt = moment(date);
+    const difference = moment.duration(now.diff(tokenSendAt));
+    return difference.asHours();
 };

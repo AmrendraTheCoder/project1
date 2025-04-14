@@ -2,6 +2,7 @@
 
 import {
   CHECK_CREDENTIALS_URL,
+  FORGET_PASSWORD_URL,
   LOGIN_URL,
   REGISTER_URL,
 } from "@/lib/apiEndPoints";
@@ -21,6 +22,12 @@ interface LoginState {
     email?: string;
     password?: string;
   };
+}
+
+interface ForgetPasswordState {
+  status: number;
+  message: string;
+  errors: Record<string, string | undefined>;
 }
 
 export async function registerAction(
@@ -261,6 +268,102 @@ export async function loginAction(
       message: "Something went wrong. Please try again later.",
       errors: {},
       data: {},
+    };
+  }
+}
+
+export async function forgetPasswordAction(
+  prevState: ForgetPasswordState,
+  formData: FormData
+): Promise<ForgetPasswordState> {
+  console.log("🚀 Forget Password server action triggered");
+
+  try {
+    const email = formData.get("email") as string;
+
+    console.log("📝 Form data received:", { email });
+
+    // Validate input data
+    if (!email) {
+      console.log("❌ Validation failed: Missing email");
+      return {
+        status: 422,
+        message: "Email is required",
+        errors: {
+          email: !email ? "Email is required" : undefined,
+        },
+      };
+    }
+
+    // Prepare the data for API request
+    const data = {
+      email,
+    };
+
+    console.log("📡 Using Forget Password endpoint:", FORGET_PASSWORD_URL);
+    console.log("✅ Validation passed, sending data to:", FORGET_PASSWORD_URL);
+
+    // Make the API request
+    const response = await axios({
+      method: "post",
+      url: FORGET_PASSWORD_URL,
+      data: data,
+      headers: {
+        "Content-Type": "application/json",
+      },
+      withCredentials: true,
+    });
+
+    console.log("🎉 Password reset email sent:", response.data);
+
+    // Return success state
+    return {
+      status: 200,
+      message:
+        response.data?.message ||
+        "We have emailed you the password reset link!",
+      errors: {},
+    };
+  } catch (error) {
+    console.log("❌ Forget Password error:", error);
+
+    // Handle specific error responses from the API
+    if (axios.isAxiosError(error) && error.response) {
+      console.log("🔍 Axios error details:", {
+        status: error.response.status,
+        statusText: error.response.statusText,
+        data: error.response.data,
+        url: error.config?.url,
+        method: error.config?.method,
+        code: error.code,
+      });
+
+      // Return validation errors from the API
+      if (error.response.status === 422) {
+        return {
+          status: 422,
+          message: error.response.data?.message || "Invalid email",
+          errors: error.response.data?.errors || {},
+        };
+      }
+
+      // Return email not found error
+      if (error.response.status === 404) {
+        return {
+          status: 404,
+          message: error.response.data?.message || "Email not found",
+          errors: {
+            email: "No account found with this email address",
+          },
+        };
+      }
+    }
+
+    // Generic error return
+    return {
+      status: 500,
+      message: "Something went wrong. Please try again later.",
+      errors: {},
     };
   }
 }

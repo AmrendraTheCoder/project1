@@ -1,13 +1,10 @@
 "use client";
 
 import React, { useEffect } from "react";
-import Link from "next/link";
-import Login from "@/components/auth/Login";
+import ForgetPassword from "@/components/auth/ForgotPassword";
 
-function LoginPage() {
-  
+function ForgotPasswordPage() {
   useEffect(() => {
-    // Create canvas context and animation
     const canvas = document.getElementById(
       "particles-canvas"
     ) as HTMLCanvasElement;
@@ -128,27 +125,18 @@ function LoginPage() {
         {/* Form section - improved text contrast */}
         <div className="mt-6">
           <h2 className="font-bold text-2xl text-white text-center mb-1">
-            Log In
+            Forgot Password
           </h2>
-          <p className="text-center text-gray-200 mb-6">Welcome back!</p>
+          <p className="text-center text-gray-200 mb-6">
+            Don't worry, it happens. Just enter your email below and we will
+            send you the password reset link.
+          </p>
 
-          <Login />
-
-          <div className="text-center mt-6">
-            <p className="text-gray-200">
-              Don't have an account?{" "}
-              <Link
-                href="/register"
-                className="text-pink-400 hover:text-pink-300 font-semibold transition-colors"
-              >
-                Register!
-              </Link>
-            </p>
-          </div>
+          <ForgetPassword />
         </div>
       </div>
     </div>
   );
 }
 
-export default LoginPage;
+export default ForgotPasswordPage;

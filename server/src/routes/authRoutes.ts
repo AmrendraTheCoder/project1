@@ -9,57 +9,54 @@ import { v4 as uuid4 } from "uuid";
 import jwt from "jsonwebtoken";
 import { emailQueue, emailQueueName } from "../jobs/Emailjob.js";
 import authMiddleware from "../middleware/AuthMiddleware.js";
-
+import { authLimiter } from "../config/rateLimit.js";
 const router = Router();
 
 // * Login Routes
 router.post(
   "/login",
-  function (req: Request, res: Response, next: NextFunction) {
+  authLimiter,
+  (req: Request, res: Response, next: NextFunction): void => {
     const processLogin = async () => {
       try {
         const body = req.body;
         const payload = loginSchema.parse(body);
-
         // * Check email
         let user = await prisma.user.findUnique({
           where: { email: payload.email },
         });
         if (!user || user === null) {
-          return res.status(422).json({
+          res.status(422).json({
             message: "Authentication failed",
             errors: { email: "No user found with this email." },
           });
+          return;
         }
-
         // * Check password
         const compare = await bcrypt.compare(payload.password, user.password);
         if (!compare) {
-          return res.status(422).json({
+          res.status(422).json({
             message: "Authentication failed",
             errors: {
               password: "Invalid password.",
             },
           });
+          return;
         }
-
         // * JWT Payload
         let JWTPayload = {
           id: user.id,
           name: user.name,
           email: user.email,
         };
-
         // Make sure SECRET_KEY is set
         if (!process.env.SECRET_KEY) {
           throw new Error("SECRET_KEY is not defined in environment variables");
         }
-
         const token = jwt.sign(JWTPayload, process.env.SECRET_KEY, {
           expiresIn: "365d",
         });
-
-        return res.status(200).json({
+        res.status(200).json({
           message: "Logged in successfully!",
           data: {
             ...JWTPayload,
@@ -70,18 +67,18 @@ router.post(
         console.error("Login error:", error);
         if (error instanceof ZodError) {
           const errors = formatError(error);
-          return res.status(422).json({
+          res.status(422).json({
             message: "Invalid login data",
             errors,
           });
+          return;
         }
-        return res.status(500).json({
+        res.status(500).json({
           message: "Something went wrong. Please try again later.",
           errors: { general: "Server error during login" },
         });
       }
     };
-
     processLogin().catch((error) => {
       console.error("Unhandled login error:", error);
       next(error);
@@ -92,51 +89,48 @@ router.post(
 // * Login Check routes
 router.post(
   "/check/credentials",
-  function (req: Request, res: Response, next: NextFunction) {
+  authLimiter,
+  (req: Request, res: Response, next: NextFunction): void => {
     const processLogin = async () => {
       try {
         const body = req.body;
         const payload = loginSchema.parse(body);
-
         // * Check email
         let user = await prisma.user.findUnique({
           where: { email: payload.email },
         });
         if (!user || user === null) {
-          return res.status(422).json({
+          res.status(422).json({
             message: "Authentication failed",
             errors: { email: "No user found with this email." },
           });
+          return;
         }
-
         // * Check password
         const compare = await bcrypt.compare(payload.password, user.password);
         if (!compare) {
-          return res.status(422).json({
+          res.status(422).json({
             message: "Authentication failed",
             errors: {
               password: "Invalid password.",
             },
           });
+          return;
         }
-
-        // * JWT Payload - Define it here before using
+        // * JWT Payload
         let JWTPayload = {
           id: user.id,
           name: user.name,
           email: user.email,
         };
-
         // Make sure SECRET_KEY is set
         if (!process.env.SECRET_KEY) {
           throw new Error("SECRET_KEY is not defined in environment variables");
         }
-
         const token = jwt.sign(JWTPayload, process.env.SECRET_KEY, {
           expiresIn: "365d",
         });
-
-        return res.status(200).json({
+        res.status(200).json({
           message: "Logged in successfully!",
           data: {
             ...JWTPayload,
@@ -147,18 +141,18 @@ router.post(
         console.error("Login error:", error);
         if (error instanceof ZodError) {
           const errors = formatError(error);
-          return res.status(422).json({
+          res.status(422).json({
             message: "Invalid login data",
             errors,
           });
+          return;
         }
-        return res.status(500).json({
+        res.status(500).json({
           message: "Something went wrong. Please try again later.",
           errors: { general: "Server error during login" },
         });
       }
     };
-
     processLogin().catch((error) => {
       console.error("Unhandled login error:", error);
       next(error);
@@ -169,7 +163,8 @@ router.post(
 // * Register Routes
 router.post(
   "/register",
-  function (req: Request, res: Response, next: NextFunction) {
+  authLimiter,
+  (req: Request, res: Response, next: NextFunction): void => {
     const processRegistration = async () => {
       try {
         const body = req.body;
@@ -177,22 +172,19 @@ router.post(
         let user = await prisma.user.findUnique({
           where: { email: payload.email },
         });
-
         if (user) {
-          return res.status(422).json({
+          res.status(422).json({
             errors: {
               email: "Email already exists. Please use another one.",
             },
           });
+          return;
         }
-
         // Encrypt the password
         const salt = await bcrypt.genSalt(10);
         payload.password = await bcrypt.hash(payload.password, salt);
-
         const token = await bcrypt.hash(uuid4(), salt);
         const url = `${process.env.APP_URL}/verify-email?email=${payload.email}&token=${token}`;
-
         // Create the user FIRST, before sending email
         await prisma.user.create({
           data: {
@@ -202,20 +194,17 @@ router.post(
             email_verify_token: token,
           },
         });
-
         const emailBody = await renderEmailEjs("verify-email", {
           name: payload.name,
           url: url,
         });
-
         // Send Email after user creation is successful
         await emailQueue.add(emailQueueName, {
           to: payload.email,
           subject: "Rumor Email Verification",
           body: emailBody,
         });
-
-        return res.json({
+        res.json({
           message:
             "Account created successfully! Please check your email for verification.",
         });
@@ -223,23 +212,23 @@ router.post(
         console.log(error);
         if (error instanceof ZodError) {
           const errors = formatError(error);
-          return res.status(422).json({ message: "invalid data", errors });
+          res.status(422).json({ message: "invalid data", errors });
+          return;
         }
-        return res
-          .status(500)
-          .json({ message: "Something went wrong. Please try again!" });
+        res.status(500).json({
+          message: "Something went wrong. Please try again!",
+        });
       }
     };
-
     processRegistration().catch(next);
   }
 );
 
 // * Get User
-router.get("/user", authMiddleware, async (req: Request, res: Response) => {
+router.get("/user", authMiddleware, (req: Request, res: Response): void => {
   const user = req.user;
   // await testQueue.add(testQueueName, user);
-  return res.json({ message: "Fetched", user });
+  res.json({ message: "Fetched", user });
 });
 
 export default router;
