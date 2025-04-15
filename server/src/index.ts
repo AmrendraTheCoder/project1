@@ -3,6 +3,7 @@ import { Request, Response } from "express";
 import "dotenv/config";
 import ejs, { fileLoader } from "ejs";
 import path from "path";
+import cors from "cors"
 import { fileURLToPath } from "url";
 import Routes from "./routes/index.js";
 import fileUpload from "express-fileupload"
@@ -21,6 +22,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(appLimitter)
+app.use(cors())
 app.use(
   fileUpload({
     useTempFiles: true,

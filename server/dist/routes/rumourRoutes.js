@@ -3,8 +3,6 @@ import { ZodError } from "zod";
 import { formatError, imageValidator, removeFile, uploadFile, } from "../helper.js";
 import { rumourSchema } from "../validation/rumorValidation.js";
 import prisma from "../config/database.js";
-// Import the AuthUser type if needed for type checking
-// import { AuthUser } from "../types/custom-types";
 const router = Router();
 // Get all rumours for a user
 router.get("/", async (req, res) => {
@@ -13,6 +11,9 @@ router.get("/", async (req, res) => {
             where: {
                 user_id: req.user?.id,
             },
+            orderBy: {
+                id: "desc"
+            }
         });
         res.json({ message: "Rumours fetch successfully!", data: rumour });
     }
@@ -188,20 +189,6 @@ router.put("/:id", async (req, res) => {
         res.status(500).json({
             message: "Something went wrong. Please try again!",
         });
-    }
-});
-router.get("/:id", async (req, res) => {
-    try {
-        const { id } = req.params;
-        const rumour = await prisma.rumour.findUnique({
-            where: {
-                id: Number(id),
-            },
-        });
-        res.json({ message: "Rumour fetch successfully!", data: rumour });
-    }
-    catch (error) {
-        res.status(500).json({ message: "Something went wrong!" });
     }
 });
 // Delete an existing rumour

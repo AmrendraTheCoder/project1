@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { Dispatch, SetStateAction, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -24,6 +24,8 @@ import {
 import { RUMOUR_URL } from "@/lib/apiEndPoints";
 import axios from "axios";
 import { toast } from "sonner";
+import { RumourType } from "@/types";
+import { clearCache } from "@/actions/CommonActions";
 
 // Define types locally to avoid import issues
 type RumourFormType = {
@@ -44,10 +46,30 @@ type CustomUser = {
   // Add other user properties as needed
 };
 
-function AddRumor({ user }: { user: CustomUser }) {
-  const [open, setOpen] = useState(false);
-  const [rumourData, setRumourData] = useState<RumourFormType>({});
-  const [date, setDate] = React.useState<Date | null>(null);
+function EditRumor({
+  token,
+  rumour,
+  open,
+  setOpen,
+}: {
+  token: string;
+  rumour: RumourType;
+  open: boolean;
+  setOpen: Dispatch<SetStateAction<boolean>>;
+}) {
+  const [rumourData, setRumourData] = useState<RumourFormType>({
+    title: rumour?.title,
+    description: rumour?.description,
+  });
+  // Parse the date safely
+  const [date, setDate] = React.useState<Date | null>(() => {
+    try {
+      return rumour?.expire_at ? new Date(rumour.expire_at) : null;
+    } catch (e) {
+      console.error("Invalid date format:", e);
+      return null;
+    }
+  });
   const [image, setImage] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<RumourFormTypeError>({});
@@ -95,23 +117,20 @@ function AddRumor({ user }: { user: CustomUser }) {
       formData.append("expire_at", date!.toISOString());
       formData.append("image", image!);
 
-      // Get token from user or from another source if needed
-      const token = user.token || "";
-
-      const response = await axios.post(RUMOUR_URL, formData, {
+      const response = await axios.put(`${RUMOUR_URL}/${rumour.id}`, formData, {
         headers: {
           Authorization: token,
-          // No need to set Content-Type for FormData, axios will set it automatically
         },
       });
 
       setLoading(false);
       if (response.data?.message) {
+        clearCache("dashboard");
         setRumourData({});
         setDate(null);
         setImage(null);
-        setErrors({})
-        toast.success("Rumour added successfully!");
+        setErrors({});
+        toast.success(response.data?.message);
         setOpen(false);
       }
     } catch (error) {
@@ -134,12 +153,7 @@ function AddRumor({ user }: { user: CustomUser }) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button className="bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600 text-white font-medium rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2">
-          <Plus size={18} className="animate-pulse" />
-          <span>Add Rumour</span>
-        </Button>
-      </DialogTrigger>
+      <DialogTrigger asChild></DialogTrigger>
       <DialogContent
         className="max-w-lg bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-800 border-0 shadow-2xl rounded-xl"
         onInteractOutside={(e) => e.preventDefault()}
@@ -272,7 +286,7 @@ function AddRumor({ user }: { user: CustomUser }) {
                 <Calendar
                   mode="single"
                   selected={date || undefined}
-                  onSelect={setDate}
+                  onSelect={(date) => setDate(date)}
                   initialFocus
                   className="rounded-lg border-0 bg-white dark:bg-slate-800 p-3"
                 />
@@ -298,4 +312,4 @@ function AddRumor({ user }: { user: CustomUser }) {
   );
 }
 
-export default AddRumor;
+export default EditRumor;

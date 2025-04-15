@@ -1,11 +1,31 @@
-type RumourFormType = {
+// types.ts
+export type RumourFormType = {
   title?: string;
   description?: string;
+  expire_at?: string;
 };
 
-type RumourFormTypeError = {
+export type RumourFormTypeError = {
   title?: string;
   description?: string;
   expire_at?: string;
   image?: string;
+};
+
+export interface CustomUser {
+  id: string;
+  name: string;
+  email: string;
+  token: string;
+  // Add any other user properties you need
+}
+
+export type RumourType = {
+  id: Number;
+  user_id: number;
+  title?: string;
+  description?: string;
+  expire_at?: string;
+  image?: string;
+  created_at?: string;
 };

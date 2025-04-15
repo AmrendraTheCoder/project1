@@ -23,12 +23,31 @@ model User {
 }
 
 model Rumour {
-  id          Int      @id @default(autoincrement())
-  user        User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  user_id     Int
-  title       String
-  description String?
-  image       String
-  created_at  DateTime @default(now())
-  expire_at   DateTime
+  id             Int              @id @default(autoincrement())
+  user           User             @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user_id        Int
+  title          String
+  description    String?
+  image          String
+  created_at     DateTime         @default(now())
+  expire_at      DateTime
+  RumourItem     RumourItem[]
+  RumourComments RumourComments[]
+}
+
+model RumourItem {
+  id         Int      @id @default(autoincrement())
+  rumour     Rumour   @relation(fields: [rumour_id], references: [id], onDelete: Cascade)
+  rumour_id  Int
+  image      String
+  count      Int      @default(0)
+  created_at DateTime @default(now())
+}
+
+model RumourComments {
+  id         Int      @id @default(autoincrement())
+  rumour     Rumour   @relation(fields: [rumour_id], references: [id], onDelete: Cascade)
+  rumour_id  Int
+  comment    String
+  created_at DateTime @default(now())
 }
