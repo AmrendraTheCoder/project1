@@ -30,6 +30,25 @@ router.get("/:id", async (req, res) => {
             where: {
                 id: Number(id),
             },
+            include: {
+                RumourItem: {
+                    select: {
+                        image: true,
+                        id: true,
+                        count: true
+                    },
+                },
+                RumourComments: {
+                    select: {
+                        id: true,
+                        comment: true,
+                        created_at: true
+                    },
+                    orderBy: {
+                        id: 'desc'
+                    }
+                }
+            }
         });
         res.json({ message: "Rumour fetch successfully!", data: rumour });
     }
@@ -89,6 +108,10 @@ router.post("/", authMiddleware, async (req, res) => {
         if (payload.description) {
             data.description = payload.description;
         }
+        // Add age only if it exists in payload
+        if (payload.age !== undefined) {
+            data.age = payload.age;
+        }
         const rumour = await prisma.rumour.create({ data });
         // Send a success response
         res.status(201).json({
@@ -147,6 +170,10 @@ router.put("/:id", authMiddleware, async (req, res) => {
         // Add description only if it exists in payload
         if (payload.description !== undefined) {
             data.description = payload.description;
+        }
+        // Add age only if it exists in payload
+        if (payload.age !== undefined) {
+            data.age = payload.age;
         }
         // Handle image update if a new image is provided
         if (req.files && req.files.image) {
@@ -239,5 +266,64 @@ router.delete("/:id", authMiddleware, async (req, res) => {
     }
 });
 // * Rumour Items Routes
-router.post("/items", authMiddleware, async (req, res) => { });
+router.post("/items", authMiddleware, async (req, res) => {
+    try {
+        const { id } = req.body;
+        const files = req.files;
+        let imgErrors = [];
+        // Check if images exist in the request
+        if (!files || !files["images[]"]) {
+            return res.status(422).json({
+                errors: ["No images uploaded"]
+            });
+        }
+        // Handle both single file and multiple files cases
+        const imageFiles = Array.isArray(files["images[]"])
+            ? files["images[]"]
+            : [files["images[]"]];
+        // Make sure we have at least 2 images
+        if (imageFiles.length < 2) {
+            return res
+                .status(404)
+                .json({ message: "Please select at least 2 images for clashing." });
+        }
+        // Validate each image
+        for (const img of imageFiles) {
+            const validMsg = imageValidator(img.size, img.mimetype);
+            if (validMsg) {
+                imgErrors.push(validMsg);
+            }
+        }
+        if (imgErrors.length > 0) {
+            return res.status(422).json({ errors: imgErrors });
+        }
+        // Upload images one by one and store the results in an array
+        const uploadedImages = [];
+        for (const img of imageFiles) {
+            const uploadedUrl = await uploadFile(img);
+            uploadedImages.push(uploadedUrl);
+        }
+        // Insert each uploaded image URL into the database
+        const rumourItems = [];
+        for (const imageUrl of uploadedImages) {
+            const item = await prisma.rumourItem.create({
+                data: {
+                    image: imageUrl,
+                    rumour_id: Number(id),
+                }
+            });
+            rumourItems.push(item);
+        }
+        return res.json({
+            message: "Rumour Items updated successfully!",
+            data: rumourItems
+        });
+    }
+    catch (error) {
+        console.error("Error adding rumour items:", error);
+        return res
+            .status(500)
+            .json({ message: "Something went wrong. Please try again." });
+    }
+});
 export default router;

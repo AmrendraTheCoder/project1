@@ -1,16 +1,18 @@
 import { z } from "zod";
 
 export const rumourSchema = z.object({
-  title: z
-    .string({ message: "Name is required" })
-    .min(2, { message: "Length must be 2 characters long" })
-    .max(60, { message: "Length must be below 60 characters" }),
-  description: z
-    .string()
-    .max(500, { message: "Lenght must be below 500 characters" })
-    .optional(),
-  expire_at: z
-    .string({ message: "Expire at is required." })
-    .min(5, { message: "Please pass correct date" }),
-  image: z.string().optional(),
+  title: z.string().min(3, {
+    message: "Title must be at least 3 characters.",
+  }),
+  description: z.string().optional(),
+  age: z.number().int().positive().optional(),
+  expire_at: z.string().refine(
+    (val) => {
+      const date = new Date(val);
+      return !isNaN(date.getTime());
+    },
+    {
+      message: "Invalid date format for expire_at",
+    }
+  ),
 });

@@ -11,6 +11,7 @@ import { Copy, Edit, EllipsisVertical, Trash } from "lucide-react";
 import dynamic from "next/dynamic";
 import { toast } from "sonner";
 import DeleteRumor from "./DeleteRumor";
+import Env from "@/lib/env";
 const EditRumour = dynamic(() => import("./EditRumour"));
 
 export default function RumorCardMenu({
@@ -22,6 +23,11 @@ export default function RumorCardMenu({
 }) {
   const [open, setOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard?.writeText(`${Env.APP_URL}/rumour/${rumour.id}`)
+    toast.success("Link Copied Successfully!")
+  }
 
   const copyRumorLink = () => {
     // This would be the URL of the rumor detail page
@@ -79,7 +85,7 @@ export default function RumorCardMenu({
           </DropdownMenuItem>
           <DropdownMenuItem
             className="flex items-center gap-2 hover:bg-slate-700 cursor-pointer"
-            onClick={copyRumorLink}
+            onClick={handleCopy}
           >
             <Copy className="h-4 w-4" />
             <span>Copy Link</span>

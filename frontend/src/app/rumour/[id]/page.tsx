@@ -9,6 +9,7 @@ import { RumourFetch } from "@/app/fetch/rumourFetch";
 import { RumourType } from "@/types";
 import AddRumourItems from "@/components/Rumors/AddRumourItems";
 import ViewRumourItems from "@/components/Rumors/ViewRumourItems";
+import Rumoring from "@/components/Rumors/Rumoring";
 
 export default async function RumourItems({
   params,
@@ -47,16 +48,9 @@ export default async function RumourItems({
               {rumour?.description ||
                 "This is where the rumour content would go."}
             </p>
-            {rumour?.RumourItem && rumour.RumourItem.length > 0 ? (
-              <ViewRumourItems rumour={rumour} />
-            ) : (
-              <AddRumourItems
-                token={session?.user?.token!}
-                rumourId={rumourId}
-              />
-            )}
+            
           </div>
-
+                {rumour && <Rumoring rumour={rumour!}/>}
           <div className="mt-8 pt-6 border-t border-slate-800">
             <h2 className="text-xl font-bold text-white mb-4">Discussion</h2>
             <div className="text-slate-400 text-center py-8">

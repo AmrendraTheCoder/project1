@@ -9,3 +9,4 @@ export const RESET_PASSWORD_URL = `${BASE_URL}/auth/reset-password`;
 
 // Rumour Routes
 export const RUMOUR_URL = `${BASE_URL}/rumours`;
+export const RUMOUR_ITEMS_URL = `${BASE_URL}/rumours/items`;

@@ -28,4 +28,22 @@ export type RumourType = {
   expire_at?: string;
   image?: string;
   created_at?: string;
+  RumourItem: Array<RumourItem>;
+  RumourComment: Array<RumourComment>;
+};
+
+export type RumourItemForm = {
+  image: File | null;
+};
+
+export type RumourItem = {
+  id: number;
+  count: number;
+  image: string;
+};
+
+export type RumourComment = {
+  id: number;
+  comment: string;
+  create_at: string;
 };

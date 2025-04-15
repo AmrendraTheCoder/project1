@@ -29,6 +29,7 @@ model Rumour {
   title          String
   description    String?
   image          String
+  age            Int?             // Added age field
   created_at     DateTime         @default(now())
   expire_at      DateTime
   RumourItem     RumourItem[]
