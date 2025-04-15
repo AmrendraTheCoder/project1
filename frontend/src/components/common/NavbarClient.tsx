@@ -1,104 +1,172 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import UserAvatar from "../common/UserAvatar";
 import LogoutModal from "../auth/LogoutModel";
-import { Menu, X } from "lucide-react";
+import { Bell, Menu, Search, Plus } from "lucide-react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import AddRumor from "@/rumors/AddRumor";
-import { CustomSession } from "@/app/api/auth/[...nextauth]/options";
+import { getServerSession } from "next-auth";
+import {
+  authOptions,
+  CustomSession,
+} from "@/app/api/auth/[...nextauth]/options";
 
-function NavbarClient({ session }: { session: CustomSession | null }) {
+function Navbar({ session }: { session: CustomSession | null }) {
   const [open, setOpen] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
-
-  // Close menu when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const menuButton = document.getElementById("menu-button");
-      const menuContent = document.getElementById("menu-content");
-
-      if (
-        menuOpen &&
-        menuButton &&
-        menuContent &&
-        !menuButton.contains(event.target as Node) &&
-        !menuContent.contains(event.target as Node)
-      ) {
-        setMenuOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [menuOpen]);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
     <>
       <LogoutModal open={open} setOpen={setOpen} />
-
-      {/* Menu button fixed at top right */}
-      <div className="fixed top-6 right-6 z-50">
-        <Button
-          id="menu-button"
-          variant="outline"
-          size="icon"
-          className={`rounded-full p-3 transition-all duration-300 bg-transparent backdrop-blur-md border border-slate-700 hover:bg-slate-800/50 shadow-lg ${
-            menuOpen ? "ring-2 ring-purple-500" : ""
-          }`}
-          onClick={() => setMenuOpen(!menuOpen)}
-        >
-          {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-        </Button>
-
-        {/* Dropdown menu that appears when button is clicked */}
-        {menuOpen && (
-          <div
-            id="menu-content"
-            className="absolute top-16 right-0 w-64 py-3 bg-transparent backdrop-blur-md border border-slate-700 rounded-xl shadow-lg shadow-purple-500/20 overflow-hidden"
-          >
-            {/* User info section */}
-            {session?.user && (
-              <div className="px-4 py-3 border-b border-slate-700">
-                <div className="flex items-center space-x-3 mb-2">
-                  <UserAvatar
-                    name={session?.user?.name?.substring(0, 2) || "??"}
-                  />
-                  <div>
-                    <p className="font-medium text-white">
-                      {session.user.name}
-                    </p>
-                    <p className="text-xs text-slate-400 truncate">
-                      {session.user.email}
-                    </p>
-                  </div>
-                </div>
+      <nav className="sticky top-0 z-50 bg-slate-900/95 backdrop-blur-sm border-b border-slate-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            {/* Logo and brand */}
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <h1 className="text-2xl sm:text-3xl font-extrabold bg-gradient-to-r from-pink-400 to-purple-500 text-transparent bg-clip-text tracking-tight">
+                  Rumors
+                </h1>
               </div>
-            )}
+            </div>
 
-            {/* Add Rumor button centered */}
-            {session?.user && (
-              <div className="flex justify-center px-3 py-4">
-                <AddRumor user={session.user} />
+            {/* Desktop navbar items */}
+            <div className="hidden md:flex items-center space-x-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  type="text"
+                  placeholder="Search rumors..."
+                  className="pl-10 w-64 bg-slate-800 border-slate-700 text-white placeholder-gray-400 focus:ring-pink-400 focus:border-pink-400"
+                />
               </div>
-            )}
 
-            {/* Logout button */}
-            <div className="px-3 pb-2">
-              <button
-                onClick={() => {
-                  setOpen(true);
-                  setMenuOpen(false);
-                }}
-                className="w-full flex items-center justify-center px-3 py-2 rounded-lg text-red-400 hover:text-red-300 hover:bg-slate-800/50 transition-colors"
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-gray-300 hover:text-black transition-opacity hover:opacity-100 opacity-80"
               >
-                <span>Log out</span>
-              </button>
+                <Bell className="h-5 w-5" />
+              </Button>
+
+              <AddRumor user={session?.user!} />
+
+              <DropdownMenu>
+                <DropdownMenuTrigger className="focus:outline-none">
+                  <UserAvatar name={"VAS"} />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="bg-slate-800 border-slate-700 text-white">
+                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                  <DropdownMenuSeparator className="bg-slate-700" />
+                  <DropdownMenuItem className="hover:bg-slate-700 focus:bg-slate-700 cursor-pointer">
+                    Profile
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="hover:bg-slate-700 focus:bg-slate-700 cursor-pointer">
+                    Settings
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator className="bg-slate-700" />
+                  <DropdownMenuItem
+                    className="hover:bg-slate-700 focus:bg-slate-700 cursor-pointer text-red-400 hover:text-red-300"
+                    onClick={() => setOpen(true)}
+                  >
+                    Log out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+
+            {/* Mobile menu button */}
+            <div className="md:hidden flex items-center gap-4">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-gray-300 hover:text-white transition-opacity hover:opacity-100 opacity-80"
+              >
+                <Search className="h-5 w-5" />
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-gray-300 hover:text-white transition-opacity hover:opacity-100 opacity-80"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              >
+                <Menu className="h-6 w-6" />
+              </Button>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger className="focus:outline-none">
+                  <UserAvatar name={"VAS"} />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="bg-slate-800 border-slate-700 text-white">
+                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                  <DropdownMenuSeparator className="bg-slate-700" />
+                  <DropdownMenuItem className="hover:bg-slate-700 focus:bg-slate-700 cursor-pointer">
+                    Profile
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="hover:bg-slate-700 focus:bg-slate-700 cursor-pointer">
+                    Settings
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator className="bg-slate-700" />
+                  <DropdownMenuItem
+                    className="hover:bg-slate-700 focus:bg-slate-700 cursor-pointer text-red-400 hover:text-red-300"
+                    onClick={() => setOpen(true)}
+                  >
+                    Log out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
-        )}
-      </div>
+
+          {/* Mobile menu, show/hide based on menu state */}
+          {mobileMenuOpen && (
+            <div className="md:hidden py-2 space-y-2 px-2">
+              <Input
+                type="text"
+                placeholder="Search rumors..."
+                className="w-full bg-slate-800 border-slate-700 text-white placeholder-gray-400 focus:ring-pink-400 focus:border-pink-400 mb-2"
+              />
+              <Button className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white">
+                <Plus className="h-4 w-4 mr-2" />
+                New Rumor
+              </Button>
+              <div className="pt-4 pb-3 border-t border-slate-700">
+                <Link
+                  href="/profile"
+                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-slate-800"
+                >
+                  Profile
+                </Link>
+                <Link
+                  href="/settings"
+                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-slate-800"
+                >
+                  Settings
+                </Link>
+                <button
+                  onClick={() => setOpen(true)}
+                  className="w-full text-left block px-3 py-2 rounded-md text-base font-medium text-red-400 hover:text-red-300 hover:bg-slate-800"
+                >
+                  Log out
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </nav>
     </>
   );
 }
 
-export default NavbarClient;
+export default Navbar;

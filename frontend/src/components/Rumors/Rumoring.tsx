@@ -51,15 +51,13 @@ export default function Rumoring({ rumour }: { rumour: RumourType }) {
           })}
       </div>
 
-      <form
-        className="mt-4 w-full"
-      >
+      <form className="mt-4 w-full">
         <Textarea
           placeholder="type your suggestions"
           value={comments}
           onChange={(e) => setComments(e.target.value)}
-              />
-<Button className="w-full mt-2">Submit Comment</Button>
+        />
+        <Button className="w-full mt-2">Submit Comment</Button>
       </form>
       {/* Display comments */}
       <div className="mt-4">

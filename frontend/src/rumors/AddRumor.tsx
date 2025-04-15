@@ -12,7 +12,13 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
-import { Plus, Clock, Image } from "lucide-react";
+import {
+  Calendar as CalendarIcon,
+  Plus,
+  Upload,
+  Clock,
+  Image,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -22,35 +28,18 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { RUMOUR_URL } from "@/lib/apiEndPoints";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
+import { CustomUser } from "@/app/api/auth/[...nextauth]/options";
 import { toast } from "sonner";
-
-// Define types locally to avoid import issues
-type RumourFormType = {
-  title?: string;
-  description?: string;
-};
-
-type RumourFormTypeError = {
-  title?: string;
-  description?: string;
-  expire_at?: string;
-  image?: string;
-};
-
-type CustomUser = {
-  id: string;
-  token?: string;
-  // Add other user properties as needed
-};
+import { RumourFormType, RumourFormTypeError } from "@/types";
 
 function AddRumor({ user }: { user: CustomUser }) {
   const [open, setOpen] = useState(false);
   const [rumourData, setRumourData] = useState<RumourFormType>({});
-  const [date, setDate] = React.useState<Date | null>(null);
+  const [date, setDate] = React.useState<Date | null>();
   const [image, setImage] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState<RumourFormTypeError>({});
+  const [errors, setErrors] = useState<RumourFormTypeError>({})
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -61,73 +50,38 @@ function AddRumor({ user }: { user: CustomUser }) {
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    setErrors({});
-
-    // Client-side validation
-    let hasErrors = false;
-    const newErrors: RumourFormTypeError = {};
-
-    if (!rumourData.title) {
-      newErrors.title = "Title is required";
-      hasErrors = true;
-    }
-
-    if (!date) {
-      newErrors.expire_at = "Expiration date is required";
-      hasErrors = true;
-    }
-
-    if (!image) {
-      newErrors.image = "Image is required";
-      hasErrors = true;
-    }
-
-    if (hasErrors) {
-      setErrors(newErrors);
-      return;
-    }
-
     try {
       setLoading(true);
       const formData = new FormData();
-      formData.append("title", rumourData.title || "");
-      formData.append("description", rumourData.description || "");
-      formData.append("expire_at", date!.toISOString());
-      formData.append("image", image!);
+      formData.append("title", rumourData?.title ?? "");
+      formData.append("description", rumourData?.description ?? "");
+      formData.append("expire_at", date?.toISOString() ?? "");
+      if (image) {
+        formData.append("image", image);
+      }
 
-      // Get token from user or from another source if needed
-      const token = user.token || "";
-
-      const response = await axios.post(RUMOUR_URL, formData, {
+      const {data} = await axios.post(RUMOUR_URL, formData, {
         headers: {
-          Authorization: token,
-          // No need to set Content-Type for FormData, axios will set it automatically
+          Authorization: user.token,
         },
       });
 
-      setLoading(false);
-      if (response.data?.message) {
-        setRumourData({});
-        setDate(null);
-        setImage(null);
-        setErrors({})
-        toast.success("Rumour added successfully!");
-        setOpen(false);
+      setLoading(false)
+      if (data?.message) {
+        setRumourData({})
+        setDate(null)
+        setImage(null)
+        toast.success("Rumour added Successfully!")
+        setOpen(false)
       }
     } catch (error) {
-      setLoading(false);
-
-      if (axios.isAxiosError(error)) {
-        if (error.response?.status === 422 && error.response.data?.errors) {
-          setErrors(error.response.data.errors);
+      setLoading(false)
+      if (error instanceof AxiosError) {
+        if (error.response?.status === 422) {
+          setErrors(error.response?.data?.errors)
         } else {
-          toast.error(
-            error.response?.data?.message ||
-              "Something went wrong, please try again!"
-          );
+          toast.error("Something went wrong, please try again!")
         }
-      } else {
-        toast.error("An unexpected error occurred");
       }
     }
   };
@@ -152,7 +106,7 @@ function AddRumor({ user }: { user: CustomUser }) {
             Fill in the details below to share your rumour with the world
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-6 pt-4">
+        <form action="" onSubmit={handleSubmit} className="space-y-6 pt-4">
           <div className="space-y-2">
             <Label
               htmlFor="title"
@@ -165,15 +119,13 @@ function AddRumor({ user }: { user: CustomUser }) {
               id="title"
               placeholder="Enter an attention-grabbing title..."
               type="text"
-              value={rumourData.title || ""}
+              value={rumourData?.title ?? ""}
               onChange={(e) => {
                 setRumourData({ ...rumourData, title: e.target.value });
               }}
               className="w-full px-4 py-3 rounded-lg border border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-slate-800 dark:text-white transition-all duration-200"
             />
-            {errors.title && (
-              <span className="text-red-500">{errors.title}</span>
-            )}
+            <span></span>
           </div>
 
           <div className="space-y-2">
@@ -187,15 +139,12 @@ function AddRumor({ user }: { user: CustomUser }) {
             <Textarea
               id="description"
               placeholder="Spill all the juicy details here..."
-              value={rumourData.description || ""}
+              value={rumourData?.description ?? ""}
               onChange={(e) => {
                 setRumourData({ ...rumourData, description: e.target.value });
               }}
               className="min-h-32 w-full px-4 py-3 rounded-lg border border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-slate-800 dark:text-white transition-all duration-200 resize-none"
             />
-            {errors.description && (
-              <span className="text-red-500">{errors.description}</span>
-            )}
           </div>
 
           <div className="space-y-2">
@@ -221,9 +170,6 @@ function AddRumor({ user }: { user: CustomUser }) {
                   <p className="text-xs text-slate-500 dark:text-slate-400">
                     PNG, JPG, GIF up to 5MB
                   </p>
-                  {image && (
-                    <p className="text-sm text-green-500 mt-2">{image.name}</p>
-                  )}
                 </div>
                 <input
                   id="image"
@@ -234,9 +180,6 @@ function AddRumor({ user }: { user: CustomUser }) {
                   onChange={handleImageChange}
                 />
               </label>
-              {errors.image && (
-                <span className="text-red-500">{errors.image}</span>
-              )}
             </div>
           </div>
 
@@ -251,7 +194,7 @@ function AddRumor({ user }: { user: CustomUser }) {
             <Popover>
               <PopoverTrigger asChild>
                 <Button
-                  variant="outline"
+                  variant={"outline"}
                   className={cn(
                     "w-full px-4 py-6 justify-start text-left font-normal border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all duration-200",
                     !date && "text-slate-500 dark:text-slate-400"
@@ -259,7 +202,7 @@ function AddRumor({ user }: { user: CustomUser }) {
                 >
                   <Clock className="mr-3 h-5 w-5 text-slate-400" />
                   {date ? (
-                    format(date, "PPP")
+                    format(date, "PPPP")
                   ) : (
                     <span>When should this rumour expire?</span>
                   )}
@@ -271,16 +214,13 @@ function AddRumor({ user }: { user: CustomUser }) {
               >
                 <Calendar
                   mode="single"
-                  selected={date || undefined}
+                  selected={date ?? new Date()}
                   onSelect={setDate}
                   initialFocus
                   className="rounded-lg border-0 bg-white dark:bg-slate-800 p-3"
                 />
               </PopoverContent>
             </Popover>
-            {errors.expire_at && (
-              <span className="text-red-500">{errors.expire_at}</span>
-            )}
           </div>
 
           <DialogFooter className="pt-6 flex gap-3">
@@ -289,7 +229,7 @@ function AddRumor({ user }: { user: CustomUser }) {
               disabled={loading}
               className="w-full py-6 rounded-lg bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600 text-white font-medium shadow-md hover:shadow-lg transition-all duration-300"
             >
-              {loading ? "Spreading..." : "Spread the Rumour"}
+              {loading? "Spreading..." : "Spread the Rumour"}
             </Button>
           </DialogFooter>
         </form>

@@ -7,12 +7,23 @@ import { fileURLToPath } from "url";
 import Routes from "./routes/index.js";
 import fileUpload from "express-fileupload";
 import os from "os";
+import { Server } from "socket.io";
+import { createServer } from "http";
 // Import email queue
 import "./jobs/index.js";
 import { emailQueue } from "./jobs/Emailjob.js";
 import { appLimitter } from "./config/rateLimit.js";
+import { setupSocket } from "./socket.js";
 const app = express();
 const PORT = process.env.PORT || 7000;
+const server = createServer(app);
+const io = new Server(server, {
+    cors: {
+        origin: process.env.CLIENT_APP_URL,
+    },
+});
+export { io };
+setupSocket(io);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -20,7 +31,7 @@ app.use(appLimitter);
 app.use(cors());
 app.use(fileUpload({
     useTempFiles: true,
-    tempFileDir: os.tmpdir()
+    tempFileDir: os.tmpdir(),
 }));
 app.use(express.static("public"));
 // * Set View Engine
