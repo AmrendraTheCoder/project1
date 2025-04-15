@@ -3,17 +3,18 @@ import { ZodError } from "zod";
 import { formatError, imageValidator, removeFile, uploadFile, } from "../helper.js";
 import { rumourSchema } from "../validation/rumorValidation.js";
 import prisma from "../config/database.js";
+import authMiddleware from "../middleware/AuthMiddleware.js";
 const router = Router();
 // Get all rumours for a user
-router.get("/", async (req, res) => {
+router.get("/", authMiddleware, async (req, res) => {
     try {
         const rumour = await prisma.rumour.findMany({
             where: {
                 user_id: req.user?.id,
             },
             orderBy: {
-                id: "desc"
-            }
+                id: "desc",
+            },
         });
         res.json({ message: "Rumours fetch successfully!", data: rumour });
     }
@@ -37,7 +38,7 @@ router.get("/:id", async (req, res) => {
     }
 });
 // Create a new rumour
-router.post("/", async (req, res) => {
+router.post("/", authMiddleware, async (req, res) => {
     try {
         // Check if request body exists
         if (!req.body) {
@@ -107,7 +108,7 @@ router.post("/", async (req, res) => {
         });
     }
 });
-router.put("/:id", async (req, res) => {
+router.put("/:id", authMiddleware, async (req, res) => {
     try {
         const { id } = req.params;
         const rumourId = Number(id);
@@ -192,7 +193,7 @@ router.put("/:id", async (req, res) => {
     }
 });
 // Delete an existing rumour
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", authMiddleware, async (req, res) => {
     try {
         const { id } = req.params;
         const rumourId = Number(id);
@@ -237,4 +238,6 @@ router.delete("/:id", async (req, res) => {
         });
     }
 });
+// * Rumour Items Routes
+router.post("/items", authMiddleware, async (req, res) => { });
 export default router;

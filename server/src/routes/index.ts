@@ -10,6 +10,6 @@ const router = Router();
 router.use("/api/auth", authRoutes);
 router.use("/api/auth", PasswordRoutes);
 router.use("/", VerifyRoutes);
-router.use("/api/rumours", authMiddleware, RumoursRoutes);
+router.use("/api/rumours", RumoursRoutes);
 
 export default router;
