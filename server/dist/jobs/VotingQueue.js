@@ -14,7 +14,7 @@ export const handler = new Worker(votingQueueName, async (job) => {
     const data = job.data;
     await prisma.rumourItem.update({
         where: {
-            id: Number(data?.rumour_id),
+            id: Number(data?.rumourItemId),
         },
         data: {
             count: {

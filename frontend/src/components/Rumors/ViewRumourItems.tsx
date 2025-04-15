@@ -1,14 +1,44 @@
 "use client";
 import { RumourType } from "@/types";
-import React, { Fragment, useState } from "react";
+import React, { Fragment, useState, useEffect } from "react";
 import Image from "next/image";
 import { getImageURL } from "@/lib/utils";
 import CountUp from "react-countup";
+import socket from "@/lib/socket";
+
 
 
 export default function ViewRumourItems({ rumour }: { rumour: RumourType }) {
       const [rumourItems, setRumourItems] = useState(rumour.RumourItem);
   const [rumourComments, setRumourComments] = useState(rumour.RumourComment);
+  const updateCounter = (id: number) => {
+    if (rumourItems) {
+      const items = [...rumourItems];
+      const findIndex = rumourItems.findIndex((item) => item.id === id);
+      if (findIndex !== -1) {
+        items[findIndex].count += 1;
+      }
+      setRumourItems(items);
+    }
+  };
+
+  const updateComment = (payload: any) => {
+    if (rumourComments && rumourComments.length > 0) {
+      setRumourComments([payload, ...rumourComments!]);
+    } else {
+      setRumourComments([payload]);
+    }
+  };
+  
+  useEffect(() => {
+    socket.on(`rumouring-${rumour.id}`, (data) => {
+      updateCounter(data?.rumourItemId);
+    });
+    socket.on(`rumouring_comment-${rumour.id}`, (data) => {
+      updateComment(data);
+    });
+  });
+
   return (
     <div className="mt-10">
       <div className="flex flex-wrap lg:flex-nowrap justify-between items-center">

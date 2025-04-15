@@ -9,7 +9,8 @@ import Routes from "./routes/index.js";
 import fileUpload from "express-fileupload";
 import os from "os";
 import { Server } from "socket.io";
-import { createServer, Server as HttpServer} from "http"
+import { createServer, Server as HttpServer } from "http"
+import helmet from "helmet"
 
 // Import email queue
 import "./jobs/index.js";
@@ -33,6 +34,7 @@ export { io };
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 app.use(express.json());
+app.use(helmet())
 app.use(express.urlencoded({ extended: false }));
 app.use(appLimitter);
 app.use(cors());
@@ -84,4 +86,4 @@ app.get("/", (req: Request, res: Response) => {
   }
 });
 
-app.listen(PORT, () => console.log(`Server is running on PORT ${PORT}`));
+server.listen(PORT, () => console.log(`Server is running on PORT ${PORT}`));

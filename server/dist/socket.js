@@ -8,13 +8,14 @@ export function setupSocket(io) {
         });
         // * Listen every emit
         socket.onAny(async (eventName, data) => {
-            if (eventName.startsWith("clashing-")) {
+            if (eventName.startsWith("rumouring-")) {
+                console.log(data);
                 await votingQueue.add(votingQueueName, data);
-                socket.broadcast.emit(`clashing-${data?.clashId}`, data);
+                socket.broadcast.emit(`rumouring-${data?.rumourId}`, data);
             }
-            else if (eventName.startsWith("clashing_comment")) {
+            else if (eventName.startsWith("rumouring_comment")) {
                 await commentQueue.add(commentQueueName, data);
-                socket.broadcast.emit(`clashing_comment-${data?.id}`, data);
+                socket.broadcast.emit(`rumouring_comment-${data?.id}`, data);
                 console.log("The data is", data);
             }
         });
