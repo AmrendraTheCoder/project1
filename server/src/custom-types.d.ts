@@ -1,4 +1,7 @@
-interface AuthUser {
+// src/types/custom-types.ts
+
+// Define the AuthUser interface
+export interface AuthUser {
   id: number;
   name: string;
   email: string;
@@ -7,8 +10,12 @@ interface AuthUser {
   // Add other relevant user properties here
 }
 
-declare namespace Express {
-  export interface Request {
-    user?: AuthUser; // Optional user property
+// We'll use module augmentation to properly extend Express types
+declare global {
+  namespace Express {
+    // This extends the existing Express.Request interface
+    interface Request {
+      user?: AuthUser;
+    }
   }
 }

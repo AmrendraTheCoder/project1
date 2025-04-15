@@ -1,12 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
-  // Change the output path to be outside src
   output   = "../node_modules/.prisma/client"
 }
 
@@ -25,4 +18,17 @@ model User {
   email_verfied_at     DateTime?
   email_verify_token   String?
   created_at           DateTime  @default(now())
+
+  Rumour Rumour[]
+}
+
+model Rumour {
+  id          Int      @id @default(autoincrement())
+  user        User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user_id     Int
+  title       String
+  description String?
+  image       String
+  created_at  DateTime @default(now())
+  expire_at   DateTime
 }

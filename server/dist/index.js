@@ -4,14 +4,23 @@ import ejs from "ejs";
 import path from "path";
 import { fileURLToPath } from "url";
 import Routes from "./routes/index.js";
+import fileUpload from "express-fileupload";
+import os from "os";
 // Import email queue
 import "./jobs/index.js";
 import { emailQueue } from "./jobs/Emailjob.js";
+import { appLimitter } from "./config/rateLimit.js";
 const app = express();
 const PORT = process.env.PORT || 7000;
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+app.use(appLimitter);
+app.use(fileUpload({
+    useTempFiles: true,
+    tempFileDir: os.tmpdir()
+}));
+app.use(express.static("public"));
 // * Set View Engine
 app.set("view engine", "ejs");
 app.set("views", path.resolve(__dirname, "./views"));
