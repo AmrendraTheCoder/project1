@@ -35,20 +35,20 @@ router.get("/:id", async (req, res) => {
                     select: {
                         image: true,
                         id: true,
-                        count: true
+                        count: true,
                     },
                 },
                 RumourComments: {
                     select: {
                         id: true,
                         comment: true,
-                        created_at: true
+                        created_at: true,
                     },
                     orderBy: {
-                        id: 'desc'
-                    }
-                }
-            }
+                        id: "desc",
+                    },
+                },
+            },
         });
         res.json({ message: "Rumour fetch successfully!", data: rumour });
     }
@@ -273,9 +273,10 @@ router.post("/items", authMiddleware, async (req, res) => {
         let imgErrors = [];
         // Check if images exist in the request
         if (!files || !files["images[]"]) {
-            return res.status(422).json({
-                errors: ["No images uploaded"]
+            res.status(422).json({
+                errors: ["No images uploaded"],
             });
+            return;
         }
         // Handle both single file and multiple files cases
         const imageFiles = Array.isArray(files["images[]"])
@@ -283,9 +284,10 @@ router.post("/items", authMiddleware, async (req, res) => {
             : [files["images[]"]];
         // Make sure we have at least 2 images
         if (imageFiles.length < 2) {
-            return res
-                .status(404)
-                .json({ message: "Please select at least 2 images for clashing." });
+            res.status(404).json({
+                message: "Please select at least 2 images for clashing.",
+            });
+            return;
         }
         // Validate each image
         for (const img of imageFiles) {
@@ -295,7 +297,8 @@ router.post("/items", authMiddleware, async (req, res) => {
             }
         }
         if (imgErrors.length > 0) {
-            return res.status(422).json({ errors: imgErrors });
+            res.status(422).json({ errors: imgErrors });
+            return;
         }
         // Upload images one by one and store the results in an array
         const uploadedImages = [];
@@ -310,20 +313,20 @@ router.post("/items", authMiddleware, async (req, res) => {
                 data: {
                     image: imageUrl,
                     rumour_id: Number(id),
-                }
+                },
             });
             rumourItems.push(item);
         }
-        return res.json({
+        res.json({
             message: "Rumour Items updated successfully!",
-            data: rumourItems
+            data: rumourItems,
         });
     }
     catch (error) {
         console.error("Error adding rumour items:", error);
-        return res
-            .status(500)
-            .json({ message: "Something went wrong. Please try again." });
+        res.status(500).json({
+            message: "Something went wrong. Please try again.",
+        });
     }
 });
 export default router;
